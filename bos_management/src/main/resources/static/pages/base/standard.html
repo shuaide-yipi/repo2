@@ -19,8 +19,9 @@
 			$(function(){
 				// 先将body隐藏，再显示，不会出现页面刷新效果
 				$("body").css({visibility:"visible"});
-				
+
 				// 收派标准信息表格
+				//页面加载后，对datagrid进行设置
 				$('#grid').datagrid( {
 					iconCls : 'icon-forward',
 					fit : true,
@@ -30,88 +31,177 @@
 					pageList: [30,50,100],
 					pagination : true,
 					toolbar : toolbar,
-					url : "../../data/standard.json",
+					url : "/standard/pageQuery",
 					idField : 'id',
 					columns : columns
 				});
-			});	
-			
-			//工具栏
-			var toolbar = [ {
-				id : 'button-add',
-				text : '增加',
-				iconCls : 'icon-add',
-				handler : function(){
-					alert('增加');
+
+                //对收派标准save按钮，添加click事件
+                $("#save").click(function () {
+
+                    //判断是否from中所有表单对象都是通过校验
+                    if($("#standardForm").form("validate")){
+                        //通过校验
+                        $.post("/standard/save","#standardForm").serialize(),function (data) {
+                            //data数据格式{success:true,message:'xxxx'}
+                            if(data.success){
+                                //保存成功
+                                $.messager.show({
+                                    title:'提示窗口',
+                                    msg:data.message,
+                                });
+
+                                //重置表单
+                                $("#standardForm").get(0).reset();
+
+                                //刷新列表
+                                $("#grid").datagrid("reload");
+
+                                //关闭窗口
+                                $("#standardWindow").window('close');
+                            }
+                        }
+                    }else {
+                        $.messager.alert("警告","表单中还存在一些非法内容","warning");
+                    }
+                });
+
+
+
+                    //#standardForm
+
+
+			});
+
+
+
+            var toolbar = [ {
+                //工具栏
+            id : 'button-add',
+            text : '增加',
+            iconCls : 'icon-add',
+            handler : function(){
+                // alert('增加');
+                $("#standardWindow").window('open');
+                //当修改重新装载from以后，点击添加会导致id存在，无法添加。所以打开窗口之前需要清空表单
+				$("#standardForm").form("clear");
+            }
+            }, {
+            id : 'button-edit',
+            text : '修改',
+            iconCls : 'icon-edit',
+            handler : function(){
+                //获取当前datarrid选中数据
+				var rows = $("#grid").datagrid('getSelections');
+				if(rows.length !=1){
+				    //没选或多选
+					$.messager.alert("提示信息","修改数据时，只能选中一行","warning");
+				}else {
+				    //只选中一行
+					var row = rows[0];
+					//进行表单回显操作
+					$("#standardForm").form('load',row);
+					//显示窗口
+                    $("#standardWindow").window('open');
 				}
-			}, {
-				id : 'button-edit',
-				text : '修改',
-				iconCls : 'icon-edit',
-				handler : function(){
-					alert('修改');
+            }
+            },{
+            id : 'button-delete',
+            text : '作废',
+            iconCls : 'icon-cancel',
+            handler : function(){
+                //alert('作废');
+
+             /*   //获取当前datarrid选中数据
+               var rows = $("#grid").datagrid('getSelections');
+                alert(rows);
+                $.post("/standard/delete",date()),function (data){
+
+                    if(data.success){
+                        //删除成功
+                        $.messager.show({
+                            title:'提示窗口',
+                            msg:data.message,
+                        });
+
+
+
+                    }
+                })*/
+                var rows = $("#grid").datagrid('getSelections');
+                if(rows.length!=0){
+                   $.ajax({
+					   url:"/standard/delete",
+					   type:"POST",
+					   data:  JSON.stringify(rows),
+					   dataType:'json',
+					   contentType:'application/json;charset=UTF-8',
+					   success:function () {
+                           //刷新列表
+                           $("#grid").datagrid("reload");
+                       }
+				   });
 				}
-			},{
-				id : 'button-delete',
-				text : '作废',
-				iconCls : 'icon-cancel',
-				handler : function(){
-					alert('作废');
-				}
-			},{
-				id : 'button-restore',
-				text : '还原',
-				iconCls : 'icon-save',
-				handler : function(){
-					alert('还原');
-				}
-			}];
-			
-			// 定义列
-			var columns = [ [ {
-				field : 'id',
-				checkbox : true
-			},{
-				field : 'name',
-				title : '标准名称',
-				width : 120,
-				align : 'center'
-			}, {
-				field : 'minWeight',
-				title : '最小重量',
-				width : 120,
-				align : 'center'
-			}, {
-				field : 'maxWeight',
-				title : '最大重量',
-				width : 120,
-				align : 'center'
-			}, {
-				field : 'minLength',
-				title : '最小长度',
-				width : 120,
-				align : 'center'
-			}, {
-				field : 'maxLength',
-				title : '最大长度',
-				width : 120,
-				align : 'center'
-			}, {
-				field : 'operator',
-				title : '操作人',
-				width : 120,
-				align : 'center'
-			}, {
-				field : 'operatingTime',
-				title : '操作时间',
-				width : 120,
-				align : 'center'
-			}, {
-				field : 'company',
-				title : '操作单位',
-				width : 120,
-				align : 'center'
-			} ] ];
+
+
+            }
+            },{
+            id : 'button-restore',
+            text : '还原',
+            iconCls : 'icon-save',
+            handler : function(){
+                alert('还原');
+            }
+            }];
+
+            var columns = [ [ {
+                // 定义列
+            field : 'id',
+            checkbox : true
+            },{
+            field : 'name',
+            title : '标准名称',
+            width : 120,
+            align : 'center'
+            }, {
+            field : 'minWeight',
+            title : '最小重量',
+            width : 120,
+            align : 'center'
+            }, {
+            field : 'maxWeight',
+            title : '最大重量',
+            width : 120,
+            align : 'center'
+            }, {
+            field : 'minLength',
+            title : '最小长度',
+            width : 120,
+            align : 'center'
+            }, {
+            field : 'maxLength',
+            title : '最大长度',
+            width : 120,
+            align : 'center'
+            }, {
+            field : 'operator',
+            title : '操作人',
+            width : 120,
+            align : 'center'
+            }, {
+            field : 'operatingTime',
+            title : '操作时间',
+            width : 120,
+            align : 'center'
+            }, {
+            field : 'company',
+            title : '操作单位',
+            width : 120,
+            align : 'center'
+            } ] ];
+
+
+
 		</script>
 	</head>
 
@@ -129,7 +219,7 @@
 
 			<div region="center" style="overflow:auto;padding:5px;" border="false">
 				
-				<form>
+				<form id="standardForm">
 					<table class="table-edit" width="80%" align="center">
 						<tr class="title">
 							<td colspan="2">收派标准信息

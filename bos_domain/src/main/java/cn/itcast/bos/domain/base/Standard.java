@@ -36,4 +36,7 @@ public class Standard implements Serializable{
 	@Column(name = "C_OPERATING_COMPANY")
 	private String operatingCompany; // 操作单位
 
+	public Standard() {
+	}
+
 }
